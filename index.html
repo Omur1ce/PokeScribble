@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Daily PokéScribble — Guess the Pokémon</title>
+<meta name="description" content="A daily Pokémon image guessing game with autocomplete.">
+<style>
+  :root{
+    --bg:#3d5a98;
+    --glass: rgba(255,255,255,.78);
+    --text:#1a1a1a;
+    --accent:#ef476f;
+    --accent2:#118ab2;
+    --ok:#0a8f4a;
+    --err:#d90429;
+  }
+  html, body { height: 100%; }
+  body{
+    margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--text); background:var(--bg);
+  }
+  .bg{
+    position:fixed; inset:0;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(255,255,255,.55), transparent 60%),
+      radial-gradient(900px 500px at 105% 20%, rgba(255,255,255,.55), transparent 55%),
+      linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,.35));
+    z-index:-1;
+  }
+  .wrap{ min-height:100%; display:grid; place-items:center; padding:5vh 16px; }
+  .card{
+    width:min(900px, 95vw);
+    background:var(--glass);
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:20px;
+    box-shadow:0 20px 60px rgba(0,0,0,.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: clamp(18px, 4vw, 36px);
+  }
+  .title{ display:flex; gap:12px; align-items:center; margin:0 0 8px; text-transform:uppercase; letter-spacing:.02em; }
+  .title b{ font-size: clamp(1.3rem, 3.6vw, 2.1rem); }
+  .pokeball{ width:36px; height:36px; border-radius:50%; flex:0 0 auto;
+    background:
+      radial-gradient(circle at 50% 50%, #fff 0 7px, transparent 7px),
+      linear-gradient(#ff3b3b 0 50%, #fff 50% 100%);
+    border:3px solid #1a1a1a; box-shadow: inset 0 2px 0 rgba(0,0,0,.15), 0 6px 18px rgba(0,0,0,.15);
+  }
+  .sub{ margin:0 0 14px; color:#333; }
+  .hr{ height:3px; border-radius:3px; background:linear-gradient(90deg, var(--accent), var(--accent2)); margin:10px 0 20px; }
+
+  .game{ display:grid; gap:18px; grid-template-columns: 1fr; }
+  @media (min-width: 860px){ .game{ grid-template-columns: 1fr 1fr; } }
+
+  .imgbox{
+    background:#fff; border:1px solid rgba(0,0,0,.08); border-radius:16px; padding:16px;
+    display:grid; place-items:center; min-height:320px; position:relative;
+  }
+  .imgbox img{
+    max-width:100%; max-height:420px; object-fit:contain; image-rendering:auto;
+    filter: drop-shadow(0 6px 24px rgba(0,0,0,.12));
+  }
+  .dateTag{
+    position:absolute; top:10px; left:10px; font-size:.85rem; background:#0000000f; padding:6px 10px; border-radius:999px;
+  }
+
+  .panel{ background:#fff; border:1px solid rgba(0,0,0,.08); border-radius:16px; padding:16px; }
+  .label{ font-weight:700; margin-bottom:8px; }
+  .input-wrap{ position:relative; }
+  input[type="text"]{
+    width:100%; padding:12px; border-radius:12px; border:1px solid rgba(0,0,0,.14); background:#fff; color:#111; font-size:1rem; outline:none;
+  }
+  input[type="text"]:focus{ border-color:var(--accent2); box-shadow:0 0 0 3px rgba(17,138,178,.20); }
+  .msg{ min-height:1.25em; margin-top:10px; font-weight:700; }
+  .ok{ color:var(--ok); } .err{ color:var(--err); }
+
+  .ac-list{
+    position:absolute; left:0; right:0; top:100%; z-index:20;
+    margin-top:6px; max-height:240px; overflow:auto;
+    background:#ffffff; border:1px solid rgba(0,0,0,.12); border-radius:12px;
+    box-shadow:0 16px 40px rgba(0,0,0,.15);
+  }
+  .ac-item{ padding:10px 12px; cursor:pointer; display:flex; gap:8px; align-items:center; color:#111; }
+  .ac-item:hover, .ac-item[aria-selected="true"]{ background:#f3f8ff; }
+  .dex{ opacity:.7; font-variant-numeric:tabular-nums; min-width:3ch; }
+  .hide{ display:none; }
+
+  .meta{ display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; color:#333; }
+  .pill{ background:#0000000e; padding:6px 10px; border-radius:999px; }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="wrap">
+  <main class="card">
+    <h1 class="title"><span class="pokeball" aria-hidden="true"></span><b>Daily PokéPic</b><span style="font-weight:400">— Guess the Pokémon</span></h1>
+    <p class="sub">One scribble every day! Type to search, then press <strong>Enter</strong>.</p>
+    <div class="hr" aria-hidden="true"></div>
+
+    <section class="game">
+      <div class="imgbox">
+        <div class="dateTag" id="dateTag"></div>
+        <img id="pokeImg" alt="Today's Pokémon" />
+      </div>
+      <div class="panel">
+        <div class="label">Your Guess</div>
+        <div class="input-wrap">
+          <input id="answer" placeholder="Start typing a Pokémon…" autocomplete="off" />
+          <div id="acList" class="ac-list hide" role="listbox" aria-label="Pokémon suggestions"></div>
+        </div>
+        <div id="msg" class="msg" aria-live="polite"></div>
+
+        <div class="meta">
+          <div class="pill">Streak: <span id="streak">0</span></div>
+          <div class="pill">Next puzzle in: <span id="countdown">--:--:--</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ====== Utilities ====== */
+const msDay = 24*60*60*1000;
+const normalize = s => s.toLowerCase().normalize("NFKD")
+  .replace(/[\u0300-\u036f]/g,"")
+  .replace(/[^a-z0-9]+/g,"")
+  .trim();
+
+function parseNamesTxt(text){
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const rows = [];
+  for (const line of lines){
+    if (/^number\b/i.test(line) || /^name\b/i.test(line)) continue;
+    const parts = line.split(/\s+/);
+    const num = parts.shift();
+    const name = parts.join(' ');
+    if (num && name) rows.push({ num, name });
+  }
+  return rows;
+}
+function pad3(n){ return String(n).padStart(3,'0'); }
+
+function getDayIndex(len){
+  const now = new Date();
+  const day = Math.floor(now.getTime()/msDay);
+  return len ? (day % len) : 0;
+}
+function nextMidnightCountdown(){
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24,0,0,0);
+  const diff = midnight - now;
+  const h = Math.floor(diff/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  const s = Math.floor((diff%60000)/1000);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+/* ====== Autocomplete (your function) ====== */
+function attachAutocomplete(input, list, options, onPick){
+  let items = []; let activeIndex = -1;
+
+  function close(){ list.classList.add('hide'); list.innerHTML=''; activeIndex=-1; }
+  function open(){ list.classList.remove('hide'); }
+
+  function render(){
+    list.innerHTML = '';
+    items.forEach((opt, idx)=>{
+      const div = document.createElement('div');
+      div.className = 'ac-item';
+      div.setAttribute('role','option');
+      div.setAttribute('aria-selected', idx===activeIndex ? 'true':'false');
+      div.innerHTML = `<span class="dex">#${opt.num}</span><span>${opt.name}</span>`;
+      div.addEventListener('mousedown', e=>{ e.preventDefault(); pick(idx); });
+      list.appendChild(div);
+    });
+    items.length ? open() : close();
+  }
+
+  function filter(){
+    const q = normalize(input.value);
+    if (!q){ close(); return; }
+    const starts = [], contains = [];
+    for (const o of options){
+      const n = normalize(o.name);
+      if (n.startsWith(q)) starts.push(o);
+      else if (n.includes(q)) contains.push(o);
+    }
+    items = [...starts, ...contains].slice(0, 8);
+    activeIndex = items.length ? 0 : -1;
+    render();
+  }
+
+  function pick(idx){
+    const opt = items[idx]; if (!opt) return;
+    input.value = opt.name; close(); onPick(opt.name);
+  }
+
+  input.addEventListener('input', filter);
+  input.addEventListener('focus', filter);
+  input.addEventListener('blur', ()=> setTimeout(close, 100));
+  input.addEventListener('keydown', e=>{
+    if (list.classList.contains('hide')) return;
+    if (e.key==='ArrowDown'){ e.preventDefault(); if (activeIndex<items.length-1) activeIndex++; render(); }
+    else if (e.key==='ArrowUp'){ e.preventDefault(); if (activeIndex>0) activeIndex--; render(); }
+    else if (e.key==='Enter'){ e.preventDefault(); if (activeIndex>=0) pick(activeIndex); }
+    else if (e.key==='Escape'){ close(); }
+  });
+}
+
+/* ====== Sprite helpers ====== */
+function spriteExists(path) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = path + "?cache=" + Math.random();
+  });
+}
+
+async function findValidPokemon(dex) {
+  const dayIndex = getDayIndex(dex.length);
+  const tried = new Set();
+  let idx = dayIndex;
+
+  while (tried.size < dex.length) {
+    const mon = dex[idx];
+    const path = `sprites/${pad3(mon.num)}.jpeg`; // using .jpeg as you requested
+
+    const exists = await spriteExists(path);
+    if (exists) return mon;
+
+    tried.add(idx);
+    idx = Math.floor(Math.random() * dex.length);
+  }
+  return null; // fallback if nothing works
+}
+
+/* ====== Game boot ====== */
+async function main(){
+  const imgEl = document.getElementById('pokeImg');
+  const ansEl = document.getElementById('answer');
+  const msgEl = document.getElementById('msg');
+  const listEl = document.getElementById('acList');
+  const dateTag = document.getElementById('dateTag');
+  const streakEl = document.getElementById('streak');
+  const countdownEl = document.getElementById('countdown');
+
+  // Load Pokédex for autocomplete
+  let dex = [];
+  try{
+    const res = await fetch('names.txt');
+    dex = parseNamesTxt(await res.text()); // [{num,name}]
+  } catch(e){
+    console.warn('Could not load names.txt', e);
+  }
+  if (!dex.length){
+    msgEl.textContent = 'Could not load Pokédex.';
+    msgEl.className = 'msg err';
+    return;
+  }
+
+  // Find a Pokémon that actually has a sprite
+  const today = await findValidPokemon(dex);
+
+  if (!today) {
+    msgEl.textContent = "Error: No valid sprites found.";
+    msgEl.className = "msg err";
+    return;
+  }
+
+  // Render date
+  const todayStr = new Date().toLocaleDateString(undefined, { year:'numeric', month:'short', day:'2-digit' });
+  dateTag.textContent = todayStr;
+
+  // Load guaranteed working sprite
+  const spritePath = `sprites/${pad3(today.num)}.jpeg`;
+  imgEl.src = spritePath;
+  imgEl.alt = today.name;
+
+  // Validation function
+  function check(){
+    const value = normalize(ansEl.value);
+    if (!value){ msgEl.textContent=''; msgEl.className='msg'; return; }
+    const correct = normalize(today.name) === value;
+    msgEl.textContent = correct ? '✅ Correct!' : '❌ Try again';
+    msgEl.className = 'msg ' + (correct ? 'ok' : 'err');
+    if (correct) updateStreak();
+  }
+
+  // 🔗 HERE is where we actually hook up your autocomplete
+  attachAutocomplete(ansEl, listEl, dex, () => check());
+
+  // Also allow plain Enter
+  ansEl.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  ansEl.addEventListener('change', check);
+
+  // Streak logic (per local date key)
+  const key = 'daily_pokescribble';
+  function getDateKey(d=new Date()){
+    const copy = new Date(d); copy.setHours(0,0,0,0);
+    return String(Math.floor(copy.getTime()/msDay));
+  }
+  function updateStreak(){
+    const data = JSON.parse(localStorage.getItem(key) || '{"streak":0,"lastSolved":null}');
+    const todayKey = getDateKey();
+    if (data.lastSolved === todayKey) { streakEl.textContent = data.streak; return; }
+    const yesterdayKey = String(Number(todayKey) - 1);
+    const newStreak = (data.lastSolved === yesterdayKey) ? (data.streak + 1) : 1;
+    localStorage.setItem(key, JSON.stringify({ streak: newStreak, lastSolved: todayKey }));
+    streakEl.textContent = newStreak;
+  }
+  (function initStreak(){
+    const data = JSON.parse(localStorage.getItem(key) || '{"streak":0,"lastSolved":null}');
+    streakEl.textContent = data.streak || 0;
+  })();
+
+  // Countdown
+  function tick(){
+    countdownEl.textContent = nextMidnightCountdown();
+    requestAnimationFrame(()=>setTimeout(tick, 250));
+  }
+  tick();
+}
+
+main();
+</script>
+</body>
+</html>
