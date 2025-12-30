@@ -5,29 +5,47 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Daily PokéScribble — Guess the Pokémon</title>
 <meta name="description" content="A daily Pokémon image guessing game with autocomplete.">
+
 <style>
   :root{
-    --bg:#3d5a98;
     --glass: rgba(255,255,255,.78);
     --text:#1a1a1a;
     --accent:#ef476f;
     --accent2:#118ab2;
     --ok:#0a8f4a;
     --err:#d90429;
+
+    --bg-light: url("sprites/background_light.jpg");
+    --bg-dark:  url("sprites/background_dark.jpg");
+    --bg-image: var(--bg-light);
   }
+
   html, body { height: 100%; }
   body{
-    margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-    color:var(--text); background:var(--bg);
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--text);
+    background:#0b1020;
   }
+
   .bg{
     position:fixed; inset:0;
+    background-image: var(--bg-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index:-2;
+  }
+  .bg::after{
+    content:"";
+    position:absolute; inset:0;
     background:
       radial-gradient(1200px 600px at 10% -10%, rgba(255,255,255,.55), transparent 60%),
-      radial-gradient(900px 500px at 105% 20%, rgba(255,255,255,.55), transparent 55%),
-      linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,.35));
+      radial-gradient(900px 500px at 105% 20%, rgba(255,255,255,.45), transparent 55%),
+      linear-gradient(180deg, rgba(255,255,255,.28), rgba(0,0,0,.18));
     z-index:-1;
   }
+
   .wrap{ min-height:100%; display:grid; place-items:center; padding:5vh 16px; }
   .card{
     width:min(1100px, 96vw);
@@ -39,6 +57,15 @@
     -webkit-backdrop-filter: blur(10px);
     padding: clamp(18px, 4vw, 36px);
   }
+
+  .topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
   .title{ display:flex; gap:12px; align-items:center; margin:0 0 8px; text-transform:uppercase; letter-spacing:.02em; }
   .title b{ font-size: clamp(1.3rem, 3.6vw, 2.1rem); }
   .pokeball{ width:36px; height:36px; border-radius:50%; flex:0 0 auto;
@@ -53,7 +80,35 @@
   .meta{ display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; color:#333; }
   .pill{ background:#0000000e; padding:6px 10px; border-radius:999px; }
 
-  /* 3 daily puzzles */
+  .toggle{
+    display:flex; align-items:center; gap:10px;
+    background:#ffffffb0;
+    border:1px solid rgba(0,0,0,.10);
+    padding:8px 10px;
+    border-radius:999px;
+    user-select:none;
+  }
+  .toggle span{ font-size:.92rem; color:#222; }
+  .switch{ position:relative; width:46px; height:26px; flex:0 0 auto; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{
+    position:absolute; inset:0;
+    background:rgba(0,0,0,.18);
+    border-radius:999px;
+    transition: .2s;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+  }
+  .slider:before{
+    content:"";
+    position:absolute; height:20px; width:20px; left:3px; top:3px;
+    background:white;
+    border-radius:50%;
+    transition:.2s;
+    box-shadow:0 6px 18px rgba(0,0,0,.18);
+  }
+  .switch input:checked + .slider{ background:rgba(17,138,178,.45); }
+  .switch input:checked + .slider:before{ transform: translateX(20px); }
+
   .grid{
     display:grid;
     grid-template-columns: 1fr;
@@ -69,6 +124,7 @@
     border-radius:16px;
     padding: 14px;
     box-shadow:0 8px 24px rgba(0,0,0,.06);
+    position:relative;
   }
   .imgbox{
     background:#fff;
@@ -119,16 +175,32 @@
   .hide{ display:none; }
 </style>
 </head>
+
 <body>
-<div class="bg"></div>
+<div class="bg" aria-hidden="true"></div>
+
 <div class="wrap">
   <main class="card">
-    <h1 class="title">
-      <span class="pokeball" aria-hidden="true"></span>
-      <b>Daily PokéScribble</b>
-      <span style="font-weight:400">— Guess the Pokémon</span>
-    </h1>
-    <p class="sub">Three scribbles a day! All scribbled by the awesome <strong>Chenipan</strong>.</p>
+    <div class="topbar">
+      <div>
+        <h1 class="title">
+          <span class="pokeball" aria-hidden="true"></span>
+          <b>Daily PokéScribble</b>
+          <span style="font-weight:400">— Guess the Pokémon</span>
+        </h1>
+        <p class="sub">Three scribbles a day! All scribbled by the awesome <strong>Chenipan</strong>.</p>
+      </div>
+
+      <div class="toggle" title="Toggle background theme">
+        <span>Light</span>
+        <label class="switch" aria-label="Toggle dark background">
+          <input id="bgToggle" type="checkbox" />
+          <span class="slider"></span>
+        </label>
+        <span>Dark</span>
+      </div>
+    </div>
+
     <div class="hr" aria-hidden="true"></div>
 
     <div class="meta">
@@ -136,16 +208,21 @@
       <div class="pill" id="todayTag"></div>
     </div>
 
-    <section id="puzzles" class="grid" style="margin-top:16px;">
-      <!-- 3 puzzles injected here -->
-    </section>
+    <section id="puzzles" class="grid" style="margin-top:16px;"></section>
   </main>
 </div>
+
+<!-- Sound (plays on every correct answer) -->
+<audio id="rightSound" src="sfx/victory.mp3" preload="auto"></audio>
+
+<!-- Confetti library -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
 <script>
 /* ====== Config ====== */
 const SPRITE_EXT = "jpeg"; // change to "png" if your images are .png
 const PUZZLES_PER_DAY = 3;
+const BG_KEY = "pokescribble_bg";
 
 /* ====== Utilities ====== */
 const msDay = 24*60*60*1000;
@@ -167,10 +244,7 @@ function parseNamesTxt(text){
   return rows;
 }
 function pad3(n){ return String(n).padStart(3,'0'); }
-
-function spritePathFor(num){
-  return `sprites/${pad3(num)}.${SPRITE_EXT}`;
-}
+function spritePathFor(num){ return `sprites/${pad3(num)}.${SPRITE_EXT}`; }
 
 function spriteExists(path) {
   return new Promise(resolve => {
@@ -181,18 +255,30 @@ function spriteExists(path) {
   });
 }
 
-/* ====== Deterministic "random" daily picks ======
-   - Not based on specific Pokémon number/date mapping
-   - But deterministic per day so everyone gets same 3 for that day
-   - Depends on dex length
-*/
+/* ====== Background toggle ====== */
+function applyBackground(mode){
+  document.documentElement.style.setProperty(
+    "--bg-image",
+    mode === "dark" ? "var(--bg-dark)" : "var(--bg-light)"
+  );
+  localStorage.setItem(BG_KEY, mode);
+}
+function initBackgroundToggle(){
+  const toggle = document.getElementById("bgToggle");
+  const saved = localStorage.getItem(BG_KEY) || "light";
+  toggle.checked = (saved === "dark");
+  applyBackground(saved);
+  toggle.addEventListener("change", () => {
+    applyBackground(toggle.checked ? "dark" : "light");
+  });
+}
+
+/* ====== Deterministic random daily picks ====== */
 function getDayKeyLocal(){
   const d = new Date();
   d.setHours(0,0,0,0);
-  return Math.floor(d.getTime()/msDay); // integer day number
+  return Math.floor(d.getTime()/msDay);
 }
-
-// Tiny seeded PRNG (Mulberry32)
 function mulberry32(seed){
   return function() {
     let t = seed += 0x6D2B79F5;
@@ -201,16 +287,15 @@ function mulberry32(seed){
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   }
 }
-
 async function pickDailyPokemons(dex, count){
   const dayKey = getDayKeyLocal();
-  const rng = mulberry32(dayKey ^ (dex.length * 2654435761)); // mix in dex length
+  const rng = mulberry32(dayKey ^ (dex.length * 2654435761));
 
   const picked = [];
   const usedIdx = new Set();
   let safety = 0;
 
-  while (picked.length < count && safety < dex.length * 5){
+  while (picked.length < count && safety < dex.length * 6){
     safety++;
     const idx = Math.floor(rng() * dex.length);
     if (usedIdx.has(idx)) continue;
@@ -219,12 +304,9 @@ async function pickDailyPokemons(dex, count){
     const path = spritePathFor(mon.num);
     const ok = await spriteExists(path);
 
-    if (!ok) { usedIdx.add(idx); continue; }
-
     usedIdx.add(idx);
-    picked.push(mon);
+    if (ok) picked.push(mon);
   }
-
   return picked;
 }
 
@@ -241,7 +323,7 @@ function nextMidnightCountdown(){
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-/* ====== Autocomplete (your function) ====== */
+/* ====== Autocomplete ====== */
 function attachAutocomplete(input, list, options, onPick){
   let items = []; let activeIndex = -1;
 
@@ -293,7 +375,52 @@ function attachAutocomplete(input, list, options, onPick){
   });
 }
 
+/* ====== Confetti + audio helpers ====== */
+function originFromInput(inputEl){
+  const r = inputEl.getBoundingClientRect();
+  const x = (r.left + r.width / 2) / window.innerWidth;
+  const y = (r.top + r.height / 2) / window.innerHeight;
+  return { x, y };
+}
+
+function fireConfetti(level, origin){
+  if (typeof confetti !== "function") return;
+
+  if (level === 1){
+    confetti({ particleCount: 90, spread: 60, startVelocity: 35, scalar: 1.0, origin });
+  } else if (level === 2){
+    confetti({ particleCount: 170, spread: 80, startVelocity: 45, scalar: 1.05, origin });
+    setTimeout(() => confetti({ particleCount: 90, spread: 90, startVelocity: 35, scalar: 0.95, origin }), 180);
+  } else {
+    confetti({ particleCount: 280, spread: 100, startVelocity: 55, scalar: 1.15, origin });
+    setTimeout(() => confetti({ particleCount: 160, spread: 120, startVelocity: 45, scalar: 1.05, origin }), 160);
+    setTimeout(() => confetti({ particleCount: 140, spread: 130, startVelocity: 40, scalar: 1.0, origin }), 320);
+  }
+}
+
+// Play sound on every correct answer. Use a tiny "cooldown" to avoid double-fire.
+let lastSoundAt = 0;
+function playRightSound(){
+  const now = Date.now();
+  if (now - lastSoundAt < 120) return; // prevents accidental double calls
+  lastSoundAt = now;
+
+  const audio = document.getElementById("rightSound");
+  if (!audio) return;
+
+  // If the user gets answers quickly, restart the sound.
+  try{
+    audio.pause();
+    audio.currentTime = 0;
+  } catch(e){}
+
+  // In modern browsers this should work because it's triggered by Enter/click (a user gesture)
+  audio.play().catch(()=>{});
+}
+
 /* ====== Render one puzzle card ====== */
+const solvedSet = new Set(); // puzzle indexes that are currently correct
+
 function renderPuzzleCard(mon, index, dex){
   const el = document.createElement('div');
   el.className = 'puzzle';
@@ -320,28 +447,66 @@ function renderPuzzleCard(mon, index, dex){
   img.src = spritePathFor(mon.num);
   img.alt = mon.name;
 
-  function check(){
-    const value = normalize(input.value);
-    if (!value){ msg.textContent=''; msg.className='msg'; return; }
-    const correct = normalize(mon.name) === value;
-    msg.textContent = correct ? '✅ Correct!' : '❌ Try again';
-    msg.className = 'msg ' + (correct ? 'ok' : 'err');
+  function updateSolvedState(isCorrect){
+    if (isCorrect) solvedSet.add(index);
+    else solvedSet.delete(index);
   }
 
+  function check(){
+    const value = normalize(input.value);
+    if (!value){
+      msg.textContent='';
+      msg.className='msg';
+      updateSolvedState(false);
+      return;
+    }
+
+    const correct = normalize(mon.name) === value;
+
+    if (correct){
+      msg.textContent = '✅ Correct!';
+      msg.className = 'msg ok';
+
+      // update solved set first so intensity matches 1/2/3 solved
+      updateSolvedState(true);
+      const solvedCount = solvedSet.size;
+
+      // confetti from textbox
+      const origin = originFromInput(input);
+      fireConfetti(Math.min(3, Math.max(1, solvedCount)), origin);
+
+      // sound on every correct
+      playRightSound();
+    } else {
+      msg.textContent = '❌ Try again';
+      msg.className = 'msg err';
+      updateSolvedState(false);
+    }
+  }
+
+  // Autocomplete pick triggers check
   attachAutocomplete(input, list, dex, () => check());
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
-  input.addEventListener('change', check);
+
+  // Only check on Enter (prevents blur/focus from firing anything)
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      check();
+    }
+  });
 
   return el;
 }
 
 /* ====== Boot ====== */
 async function main(){
+  initBackgroundToggle();
+
   const countdownEl = document.getElementById('countdown');
   const puzzlesEl = document.getElementById('puzzles');
   const todayTag = document.getElementById('todayTag');
 
-  // Start countdown (fixed)
+  // Countdown
   countdownEl.textContent = nextMidnightCountdown();
   setInterval(() => {
     countdownEl.textContent = nextMidnightCountdown();
@@ -351,14 +516,13 @@ async function main(){
   const todayStr = new Date().toLocaleDateString(undefined, { year:'numeric', month:'short', day:'2-digit' });
   todayTag.textContent = `Today: ${todayStr}`;
 
-  // Load dex from names.txt
+  // Load dex
   let dex = [];
   try{
     const res = await fetch('names.txt', { cache: "no-store" });
-    const text = await res.text();
-    dex = parseNamesTxt(text);
+    dex = parseNamesTxt(await res.text());
   } catch(e){
-    puzzlesEl.innerHTML = `<div class="puzzle"><div class="msg err">Could not load Pokédex (names.txt). Are you using a local server / GitHub Pages?</div></div>`;
+    puzzlesEl.innerHTML = `<div class="puzzle"><div class="msg err">Could not load Pokédex (names.txt). Make sure it’s in the repo root.</div></div>`;
     return;
   }
 
@@ -367,7 +531,6 @@ async function main(){
     return;
   }
 
-  // Pick 3 daily scribbles (random but deterministic for the day)
   const picks = await pickDailyPokemons(dex, PUZZLES_PER_DAY);
 
   if (picks.length < PUZZLES_PER_DAY){
@@ -375,12 +538,12 @@ async function main(){
     return;
   }
 
-  // Render 3 cards
   puzzlesEl.innerHTML = '';
   picks.forEach((mon, i) => puzzlesEl.appendChild(renderPuzzleCard(mon, i, dex)));
 }
 
 main();
 </script>
+
 </body>
 </html>
