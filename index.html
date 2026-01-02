@@ -274,11 +274,11 @@ function initBackgroundToggle(){
 }
 
 /* ====== Deterministic random daily picks ====== */
-function getDayKeyLocal(){
-  const d = new Date();
-  d.setHours(0,0,0,0);
-  return Math.floor(d.getTime()/msDay);
+function getDayKeyUTC(){
+  const now = new Date();
+  return Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) / msDay);
 }
+
 function mulberry32(seed){
   return function() {
     let t = seed += 0x6D2B79F5;
@@ -288,7 +288,7 @@ function mulberry32(seed){
   }
 }
 async function pickDailyPokemons(dex, count){
-  const dayKey = getDayKeyLocal();
+  const dayKey = getDayKeyUTC();
   const rng = mulberry32(dayKey ^ (dex.length * 2654435761));
 
   const picked = [];
@@ -311,11 +311,10 @@ async function pickDailyPokemons(dex, count){
 }
 
 /* ====== Countdown ====== */
-function nextMidnightCountdown(){
+function nextUTCMidnightCountdown(){
   const now = new Date();
-  const midnight = new Date(now);
-  midnight.setHours(24,0,0,0);
-  const diff = midnight - now;
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+  const diff = next - now;
 
   const h = Math.max(0, Math.floor(diff/3600000));
   const m = Math.max(0, Math.floor((diff%3600000)/60000));
@@ -507,9 +506,9 @@ async function main(){
   const todayTag = document.getElementById('todayTag');
 
   // Countdown
-  countdownEl.textContent = nextMidnightCountdown();
+  countdownEl.textContent = nextUTCMidnightCountdown();
   setInterval(() => {
-    countdownEl.textContent = nextMidnightCountdown();
+    countdownEl.textContent = nextUTCMidnightCountdown();
   }, 1000);
 
   // Date tag
