@@ -4,9 +4,10 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Daily PokéScribble — Guess the Pokémon</title>
-<meta name="description" content="A daily Pokémon image guessing game with autocomplete.">
-
+<meta name="description" content="Guess them pokemon scribbles guys">
+<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
 <style>
+  
   :root{
     --glass: rgba(255,255,255,.78);
     --text:#1a1a1a;
@@ -18,6 +19,7 @@
     --bg-light: url("sprites/background_light.jpg");
     --bg-dark:  url("sprites/background_dark.jpg");
     --bg-image: var(--bg-light);
+    --mainframe: url("sprites/main_frame3.jpeg");
   }
 
   html, body { height: 100%; }
@@ -27,15 +29,37 @@
     color:var(--text);
     background:#0b1020;
   }
+  
+.sub,
+.meta,
+.pill,
+.label,
+.msg,
+.tag{
+  font-family: "Permanent Marker", cursive;
+  letter-spacing: 0.04em;
+}
 
-  .bg{
-    position:fixed; inset:0;
-    background-image: var(--bg-image);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    z-index:-2;
-  }
+
+/* Keep inputs clean & readable */
+input,
+.ac-item{
+  font-family: "Permanent Marker", cursive;
+  letter-spacing: 0.04em;
+}
+
+
+.bg{
+  position:fixed;
+  inset:0;
+  background-image: var(--bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index:-2;
+  transition: background-image 0.5s ease;
+}
+
   .bg::after{
     content:"";
     position:absolute; inset:0;
@@ -47,15 +71,40 @@
   }
 
   .wrap{ min-height:100%; display:grid; place-items:center; padding:5vh 16px; }
-  .card{
-    width:min(1100px, 96vw);
-    background:var(--glass);
-    border:1px solid rgba(0,0,0,.08);
-    border-radius:20px;
-    box-shadow:0 20px 60px rgba(0,0,0,.15);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: clamp(18px, 4vw, 36px);
+.card{
+  width:min(1100px, 96vw);
+
+  /* REMOVE the glass look */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  border-radius: 0;   /* frame defines shape now */
+
+  padding: clamp(18px, 4vw, 36px);
+
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
+  z-index: 1; /* card content layer */
+}
+
+  /* Big outer frame overlay (outermost bounding box) */
+  .card::before{
+    content:"";
+    position:absolute;
+    inset: 0;
+
+    /* tweak these two values manually */
+    transform: translate(20px, 0px) scale(1.05, 1.08);
+    transform-origin: center;
+
+    background: var(--mainframe) center / 100% 100% no-repeat;
+
+    z-index: -1; /* card content layer */
+    pointer-events:none;
   }
 
   .topbar{
@@ -75,7 +124,7 @@
     border:3px solid #1a1a1a; box-shadow: inset 0 2px 0 rgba(0,0,0,.15), 0 6px 18px rgba(0,0,0,.15);
   }
   .sub{ margin:0 0 14px; color:#333; }
-  .hr{ height:3px; border-radius:3px; background:linear-gradient(90deg, var(--accent), var(--accent2)); margin:10px 0 20px; }
+  /* .hr{ height:3px; border-radius:3px; background:linear-gradient(90deg, var(--accent), var(--accent2)); margin:10px 0 20px; } */
 
   .meta{ display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; color:#333; }
   .pill{ background:#0000000e; padding:6px 10px; border-radius:999px; }
@@ -118,17 +167,79 @@
     .grid{ grid-template-columns: repeat(3, 1fr); }
   }
 
-  .puzzle{
-    background:#fff;
-    border:1px solid rgba(0,0,0,.08);
-    border-radius:16px;
-    padding: 14px;
-    box-shadow:0 8px 24px rgba(0,0,0,.06);
-    position:relative;
-  }
+.imgbox{
+  position: relative;
+  aspect-ratio: 1 / 1;     /* lock scribble area */
+  isolation: isolate;
+}
+
+/* ===== Frame 1 ===== */
+.imgbox.frame-1::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:100%;
+  height:100%;
+
+  transform: translate(-52%, -50%) scale(2, 1.4);
+  transform-origin: center;
+
+  background: url("sprites/frame1.jpeg") center / 100% 100% no-repeat;
+
+  z-index: 5;
+  pointer-events:none;
+}
+
+/* ===== Frame 2 ===== */
+.imgbox.frame-2::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:100%;
+  height:100%;
+
+  transform: translate(-55%, -50%) scale(1.9, 1.38);
+  transform-origin: center;
+
+  background: url("sprites/frame2.jpeg") center / 100% 100% no-repeat;
+
+  z-index: 5;
+  pointer-events:none;
+}
+
+/* ===== Frame 3 ===== */
+.imgbox.frame-3::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:100%;
+  height:100%;
+
+  transform: translate(-55%, -49%) scale(2.05, 1.38);
+  transform-origin: center;
+
+  background: url("sprites/frame3.jpeg") center / 100% 100% no-repeat;
+
+  z-index: 5;
+  pointer-events:none;
+}
+
+
+/* Keep puzzle content above/below as desired:
+   If you want frame on top, content must be UNDER it (z-index lower) */
+.puzzle > *{
+  position: relative;
+  z-index: 1;
+}
+
+
+
+
   .imgbox{
     background:#fff;
-    border:1px solid rgba(0,0,0,.08);
     border-radius:14px;
     padding:12px;
     display:grid;
@@ -141,11 +252,6 @@
     max-width:100%;
     max-height:320px;
     object-fit:contain;
-    filter: drop-shadow(0 6px 24px rgba(0,0,0,.12));
-  }
-  .tag{
-    position:absolute; top:10px; left:10px;
-    font-size:.85rem; background:#0000000f; padding:6px 10px; border-radius:999px;
   }
   .label{ font-weight:700; margin-bottom:8px; }
   .input-wrap{ position:relative; }
@@ -173,7 +279,24 @@
   .ac-item:hover, .ac-item[aria-selected="true"]{ background:#f3f8ff; }
   .dex{ opacity:.7; font-variant-numeric:tabular-nums; min-width:3ch; }
   .hide{ display:none; }
+
+
+  .title-img{
+  max-height: 200px;   /* tweak as needed */
+  width: auto;
+  }
+
+  /* Grey-out card when dark mode is active */
+  body.dark .card{
+    filter: grayscale(3) brightness(0.75) contrast(0.9);
+  }
+.card{
+  transition: filter 0.5s ease;
+}
+
+
 </style>
+
 </head>
 
 <body>
@@ -184,9 +307,7 @@
     <div class="topbar">
       <div>
         <h1 class="title">
-          <span class="pokeball" aria-hidden="true"></span>
-          <b>Daily PokéScribble</b>
-          <span style="font-weight:400">— Guess the Pokémon</span>
+          <img src="sprites/title2.jpeg" alt="Daily PokéScribble" class="title-img" />
         </h1>
         <p class="sub">Three scribbles a day! All scribbled by the awesome <strong>Chenipan</strong>.</p>
       </div>
@@ -261,8 +382,12 @@ function applyBackground(mode){
     "--bg-image",
     mode === "dark" ? "var(--bg-dark)" : "var(--bg-light)"
   );
+
+  document.body.classList.toggle("dark", mode === "dark");
+
   localStorage.setItem(BG_KEY, mode);
 }
+
 function initBackgroundToggle(){
   const toggle = document.getElementById("bgToggle");
   const saved = localStorage.getItem(BG_KEY) || "light";
@@ -425,8 +550,7 @@ function renderPuzzleCard(mon, index, dex){
   el.className = 'puzzle';
 
   el.innerHTML = `
-    <div class="imgbox">
-      <div class="tag">Scribble ${index+1}</div>
+    <div class="imgbox frame-${index + 1}">
       <img alt="Scribble ${index+1}" />
     </div>
 
