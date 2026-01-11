@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Daily PokéScribble — Guess the Pokémon</title>
 <meta name="description" content="Guess them pokemon scribbles guys">
-<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
+
+
 <style>
   
   :root{
@@ -20,14 +22,17 @@
     --bg-dark:  url("sprites/background_dark.jpg");
     --bg-image: var(--bg-light);
     --mainframe: url("sprites/main_frame3.jpeg");
+    --font-scribble: "Comic Relief", cursive, sans-serif;
+    --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   }
 
   html, body { height: 100%; }
+  
+  html{
+  font-synthesis: none;
+  }
   body{
-    margin:0;
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-    color:var(--text);
-    background:#0b1020;
+    font-family: var(--font-ui);
   }
   
 .sub,
@@ -36,15 +41,16 @@
 .label,
 .msg,
 .tag{
-  font-family: "Permanent Marker", cursive;
+  font-family: var(--font-scribble);
   letter-spacing: 0.04em;
 }
+
 
 
 /* Keep inputs clean & readable */
 input,
 .ac-item{
-  font-family: "Permanent Marker", cursive;
+  font-family: var(--font-scribble);
   letter-spacing: 0.04em;
 }
 
