@@ -286,12 +286,41 @@ input,
   width: auto;
   }
 
+.logo-img{
+  max-height: 150px;   /* tweak as needed */
+  width: auto;
+  margin-left: auto; /* pushes logo to the far right */
+}
+
   /* Grey-out card when dark mode is active */
   body.dark .card{
     filter: grayscale(3) brightness(0.75) contrast(0.9);
   }
 .card{
   transition: filter 0.5s ease;
+}
+
+
+@media (max-width: 768px){
+  .title{
+    flex-direction: column;     /* stack instead of row */
+    align-items: center;
+    gap: 12px;
+  }
+
+  .title-img{
+    max-width: 90%;             /* prevent horizontal overflow */
+    max-height: 140px;          /* smaller on mobile */
+  }
+
+  .logo-img{
+    margin-left: 0;             /* disable right-push */
+    max-height: 56px;
+  }
+}
+.title{
+  max-width: 100%;
+  overflow: hidden;
 }
 
 
@@ -308,6 +337,7 @@ input,
       <div>
         <h1 class="title">
           <img src="sprites/title2.jpeg" alt="Daily PokéScribble" class="title-img" />
+          <img src="sprites/logo.jpeg" alt="Logo" class="logo-img" />
         </h1>
         <p class="sub">Three scribbles a day! All scribbled by the awesome <strong>Chenipan</strong>.</p>
       </div>
