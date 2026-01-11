@@ -282,7 +282,7 @@ input,
     outline:none;
   }
   input[type="text"]:focus{ border-color:var(--accent2); box-shadow:0 0 0 3px rgba(17,138,178,.20); }
-  .msg{ min-height:1.25em; margin-top:10px; font-weight:700; }
+  .msg{ margin-top: 0; }
   .ok{ color:var(--ok); } .err{ color:var(--err); }
 
   .ac-list{
@@ -417,6 +417,37 @@ input,
   border-color: transparent;
   background: rgba(17,138,178,.18);
 }
+
+.guess-row{
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.guess-row .input-wrap{
+  flex: 1;
+  min-width: 0; /* prevents overflow weirdness */
+}
+
+.guess-row .msg{
+  min-height: 0;        /* override old layout expectation */
+  margin-top: 0;        /* remove the old top margin */
+  white-space: nowrap;  /* keep “✅ Correct!” on one line */
+  flex: 0 0 auto;
+}
+
+/* On very small screens, stack again if needed */
+@media (max-width: 520px){
+  .guess-row{
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .guess-row .msg{
+    white-space: normal;
+  }
+}
+
 
 
 
@@ -766,11 +797,15 @@ function renderPuzzleCard(mon, index, dex){
     </div>
 
     <div class="label">Your Guess</div>
-    <div class="input-wrap">
-      <input placeholder="Start typing a Pokémon…" autocomplete="off" />
-      <div class="ac-list hide" role="listbox" aria-label="Pokémon suggestions"></div>
+
+    <div class="guess-row">
+      <div class="input-wrap">
+        <input placeholder="Start typing a Pokémon…" autocomplete="off" />
+        <div class="ac-list hide" role="listbox" aria-label="Pokémon suggestions"></div>
+      </div>
+      <div class="msg" aria-live="polite"></div>
     </div>
-    <div class="msg" aria-live="polite"></div>
+
   `;
 
   const img = el.querySelector('img');
