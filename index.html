@@ -328,6 +328,83 @@ input,
   max-width: 100%;
   overflow: hidden;
 }
+/* Buy-me-a-coffee button under the card */
+.bmc-wrap{
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.bmc-btn{
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.bmc-btn img{
+  max-height: 90px;    /* tweak */
+  width: auto;
+  display: block;
+}
+
+/* Simple modal */
+.modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  padding: 16px;
+}
+
+.modal-backdrop.show{ display: flex; }
+
+.modal{
+  width: min(520px, 92vw);
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+
+.modal h2{
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+}
+
+.modal p{
+  margin: 0 0 14px;
+  line-height: 1.35;
+}
+
+.modal-actions{
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.modal a{
+  text-decoration: none;
+}
+
+.btn{
+  border: 1px solid rgba(0,0,0,.15);
+  background: #fff;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.btn.primary{
+  border-color: transparent;
+  background: rgba(17,138,178,.18);
+}
+
 
 
 </style>
@@ -367,10 +444,31 @@ input,
 
     <section id="puzzles" class="grid" style="margin-top:16px;"></section>
   </main>
+    <div class="bmc-wrap">
+      <button class="bmc-btn" id="bmcOpen" aria-label="Buy me a coffee">
+        <img src="sprites/buyme.jpeg" alt="Buy me a coffee" />
+      </button>
+    </div>
 </div>
 
 <!-- Sound (plays on every correct answer) -->
 <audio id="rightSound" src="sfx/victory.mp3" preload="auto"></audio>
+
+<!-- Buy Me a Coffee Modal -->
+<div class="modal-backdrop" id="bmcModal" role="dialog" aria-modal="true" aria-labelledby="bmcTitle">
+  <div class="modal">
+    <h2 id="bmcTitle">Buy me a coffee?</h2>
+    <p>If you’re enjoying Daily PokéScribble, would you like to support Chenipan with a coffee?</p>
+
+    <div class="modal-actions">
+      <button class="btn" id="bmcClose">Not now</button>
+      <a class="btn primary" href="https://buymeacoffee.com/chenipan" target="_blank" rel="noopener noreferrer">
+        Yes — take me there
+      </a>
+    </div>
+  </div>
+</div>
+
 
 <!-- Confetti library -->
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
@@ -535,6 +633,14 @@ function attachAutocomplete(input, list, options, onPick){
   });
 }
 
+let bmcShown = false; // prevents repeat popups
+function openBmcModal(){
+  const modal = document.getElementById("bmcModal");
+  if (!modal) return;
+  modal.classList.add("show");
+}
+
+
 /* ====== Confetti + audio helpers ====== */
 function originFromInput(inputEl){
   const r = inputEl.getBoundingClientRect();
@@ -626,16 +732,24 @@ function renderPuzzleCard(mon, index, dex){
       msg.textContent = '✅ Correct!';
       msg.className = 'msg ok';
 
-      // update solved set first so intensity matches 1/2/3 solved
-      updateSolvedState(true);
-      const solvedCount = solvedSet.size;
+    updateSolvedState(true);
+    const solvedCount = solvedSet.size;
 
-      // confetti from textbox
-      const origin = originFromInput(input);
-      fireConfetti(Math.min(3, Math.max(1, solvedCount)), origin);
+    // confetti from textbox
+    const origin = originFromInput(input);
+    fireConfetti(Math.min(3, Math.max(1, solvedCount)), origin);
 
-      // sound on every correct
-      playRightSound();
+    // sound on every correct
+    playRightSound();
+
+    // 🎉 After the 3rd correct answer, show Buy Me a Coffee once
+    if (solvedCount === 3 && !bmcShown){
+      bmcShown = true;
+
+      // small delay so confetti finishes first
+      setTimeout(openBmcModal, 600);
+    }
+
     } else {
       msg.textContent = '❌ Try again';
       msg.className = 'msg err';
@@ -700,6 +814,37 @@ async function main(){
   puzzlesEl.innerHTML = '';
   picks.forEach((mon, i) => puzzlesEl.appendChild(renderPuzzleCard(mon, i, dex)));
 }
+
+
+/* ===== Buy Me a Coffee modal ===== */
+(function initBmcModal(){
+  const openBtn = document.getElementById("bmcOpen");
+  const modal = document.getElementById("bmcModal");
+  const closeBtn = document.getElementById("bmcClose");
+
+  if (!openBtn || !modal || !closeBtn) return;
+
+  function open(){
+    modal.classList.add("show");
+  }
+  function close(){
+    modal.classList.remove("show");
+  }
+
+  openBtn.addEventListener("click", open);
+  closeBtn.addEventListener("click", close);
+
+  // click outside modal closes
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) close();
+  });
+
+  // Esc closes
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") close();
+  });
+})();
+
 
 main();
 </script>
