@@ -45,6 +45,16 @@
   letter-spacing: 0.04em;
 }
 
+.disclaimer{
+  margin-top: 6px;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  opacity: 1.0;
+
+  /* matches your cartoony font system */
+  font-family: var(--font-scribble);
+}
 
 
 /* Keep inputs clean & readable */
@@ -333,7 +343,10 @@ input,
   margin-top: 14px;
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 18px;   /* space between coffee & info icons */
 }
+
 
 .bmc-btn{
   border: none;
@@ -449,7 +462,14 @@ input,
       <button class="bmc-btn" id="bmcOpen" aria-label="Buy me a coffee">
         <img src="sprites/buyme.jpeg" alt="Buy me a coffee" />
       </button>
+
+      <button class="bmc-btn" id="infoOpen" aria-label="Project disclaimer">
+        <img src="sprites/info.jpeg" alt="Project disclaimer" />
+      </button>
     </div>
+
+
+
 </div>
 
 <!-- Sound (plays on every correct answer) -->
@@ -469,6 +489,26 @@ input,
     </div>
   </div>
 </div>
+
+<!-- Disclaimer Modal -->
+<div class="modal-backdrop" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+  <div class="modal">
+    <h2 id="infoTitle">Fan Project Disclaimer</h2>
+    <p>
+      Pokémon and Pokémon character names are trademarks of Nintendo, Game Freak,
+      and The Pokémon Company.
+    </p>
+    <p>
+      This project is fan-made and is not endorsed, sponsored, or affiliated with Nintendo
+      or any of its partners.
+    </p>
+
+    <div class="modal-actions">
+      <button class="btn primary" id="infoClose">Got it</button>
+    </div>
+  </div>
+</div>
+
 
 
 <!-- Confetti library -->
@@ -832,6 +872,34 @@ async function main(){
   picks.forEach((mon, i) => puzzlesEl.appendChild(renderPuzzleCard(mon, i, dex)));
 }
 
+/* ===== Disclaimer modal ===== */
+(function initInfoModal(){
+  const openBtn = document.getElementById("infoOpen");
+  const modal = document.getElementById("infoModal");
+  const closeBtn = document.getElementById("infoClose");
+
+  if (!openBtn || !modal || !closeBtn) return;
+
+  function open(){
+    modal.classList.add("show");
+  }
+  function close(){
+    modal.classList.remove("show");
+  }
+
+  openBtn.addEventListener("click", open);
+  closeBtn.addEventListener("click", close);
+
+  // click outside closes
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) close();
+  });
+
+  // Esc closes
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") close();
+  });
+})();
 
 /* ===== Buy Me a Coffee modal ===== */
 (function initBmcModal(){
