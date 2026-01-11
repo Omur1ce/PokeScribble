@@ -423,6 +423,7 @@ input,
           <img src="sprites/logo.jpeg" alt="Logo" class="logo-img" />
         </h1>
         <p class="sub">Three scribbles a day! All scribbled by the awesome <strong>Chenipan</strong>.</p>
+        <p class="sub" id="scribbleCount">--/1025 Pokémon Scribbled!</p>
       </div>
 
       <div class="toggle" title="Toggle background theme">
@@ -498,6 +499,16 @@ function parseNamesTxt(text){
   }
   return rows;
 }
+
+function maxDexNumber(dexRows){
+  let max = 0;
+  for (const r of dexRows){
+    const n = parseInt(String(r.num).replace(/\D/g,''), 10);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  return max;
+}
+
 function pad3(n){ return String(n).padStart(3,'0'); }
 function spritePathFor(num){ return `sprites/${pad3(num)}.${SPRITE_EXT}`; }
 
@@ -794,6 +805,12 @@ async function main(){
   try{
     const res = await fetch('names.txt', { cache: "no-store" });
     dex = parseNamesTxt(await res.text());
+    const scribbleEl = document.getElementById("scribbleCount");
+    if (scribbleEl){
+      const count = maxDexNumber(dex);
+      scribbleEl.textContent = `${count}/1025 Pokémon Scribbled!`;
+    }
+
   } catch(e){
     puzzlesEl.innerHTML = `<div class="puzzle"><div class="msg err">Could not load Pokédex (names.txt). Make sure it’s in the repo root.</div></div>`;
     return;
