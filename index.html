@@ -52,7 +52,6 @@
   line-height: 1.3;
   opacity: 1.0;
 
-  /* matches your cartoony font system */
   font-family: var(--font-scribble);
 }
 
@@ -113,7 +112,7 @@ input,
     position:absolute;
     inset: 0;
 
-    /* tweak these two values manually */
+    /* tweak */
     transform: translate(20px, 0px) scale(1.05, 1.08);
     transform-origin: center;
 
@@ -565,7 +564,7 @@ input,
 
 <script>
 /* ====== Config ====== */
-const SPRITE_EXT = "jpeg"; // change to "png" if your images are .png
+const SPRITE_EXT = "jpeg";
 const PUZZLES_PER_DAY = 3;
 const BG_KEY = "pokescribble_bg";
 
@@ -780,7 +779,6 @@ function playRightSound(){
     audio.currentTime = 0;
   } catch(e){}
 
-  // In modern browsers this should work because it's triggered by Enter/click (a user gesture)
   audio.play().catch(()=>{});
 }
 
@@ -846,7 +844,7 @@ function renderPuzzleCard(mon, index, dex){
     // sound on every correct
     playRightSound();
 
-    // 🎉 After the 3rd correct answer, show Buy Me a Coffee once
+    // After the 3rd correct answer, show Buy Me a Coffee once
     if (solvedCount === 3 && !bmcShown){
       //bmcShown = true;
 
