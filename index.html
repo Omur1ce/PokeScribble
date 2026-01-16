@@ -206,6 +206,8 @@ input,
   isolation: isolate;
 }
 
+
+
 /* ===== Frame 1 ===== */
 .imgbox.frame-1::before{
   content:"";
@@ -514,6 +516,12 @@ input,
       <button class="bmc-btn" id="infoOpen" aria-label="Project disclaimer">
         <img src="sprites/info.jpeg" alt="Project disclaimer" />
       </button>
+
+      <button class="bmc-btn" id="yesterdayOpen" type="button" aria-label="Yesterday's answers">
+        <img src="sprites/yesterday.jpeg" alt="Yesterday's answers" />
+      </button>
+
+
     </div>
 
 
@@ -573,6 +581,21 @@ input,
     </div>
   </div>
 </div>
+
+<!-- Yesterday Modal -->
+<div class="modal-backdrop" id="yesterdayModal" role="dialog" aria-modal="true" aria-labelledby="yesterdayTitle">
+  <div class="modal">
+    <h2 id="yesterdayTitle">Yesterday’s Answers</h2>
+
+    <ul id="yesterdayList"></ul>
+
+    <div class="modal-actions">
+      <button class="btn primary" id="yesterdayClose" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+
 
 
 
@@ -685,6 +708,62 @@ async function pickDailyPokemons(dex, count){
   }
   return picked;
 }
+
+
+
+function getDayKeyUTCOffset(offsetDays){
+  const now = new Date();
+  return Math.floor(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + offsetDays
+    ) / msDay
+  );
+}
+
+function pickPokemonsForDaySync(dex, count, dayOffset){
+  const dayKey = getDayKeyUTCOffset(dayOffset);
+  const rng = mulberry32(dayKey ^ (dex.length * 2654435761));
+
+  const picked = [];
+  const usedIdx = new Set();
+  let safety = 0;
+
+  while (picked.length < count && safety < dex.length * 6){
+    safety++;
+    const idx = Math.floor(rng() * dex.length);
+    if (usedIdx.has(idx)) continue;
+
+    usedIdx.add(idx);
+    picked.push(dex[idx]);
+  }
+
+  return picked;
+}
+
+
+async function pickPokemonsForDay(dex, count, dayOffset){
+  const dayKey = getDayKeyUTCOffset(dayOffset);
+  const rng = mulberry32(dayKey ^ (dex.length * 2654435761));
+
+  const picked = [];
+  const usedIdx = new Set();
+  let safety = 0;
+
+  while (picked.length < count && safety < dex.length * 6){
+    safety++;
+    const idx = Math.floor(rng() * dex.length);
+    if (usedIdx.has(idx)) continue;
+
+    usedIdx.add(idx);
+    picked.push(dex[idx]);
+  }
+
+  return picked;
+}
+
+
 
 /* ====== Countdown ====== */
 function nextUTCMidnightCountdown(){
@@ -914,6 +993,8 @@ async function main(){
   try{
     const res = await fetch('names.txt', { cache: "no-store" });
     dex = parseNamesTxt(await res.text());
+    window.__DEX__ = dex;
+
     const scribbleEl = document.getElementById("scribbleCount");
     if (scribbleEl){
       const count = maxDexNumber(dex);
@@ -939,6 +1020,7 @@ async function main(){
 
   puzzlesEl.innerHTML = '';
   picks.forEach((mon, i) => puzzlesEl.appendChild(renderPuzzleCard(mon, i, dex)));
+
 }
 
 /* ===== Disclaimer modal ===== */
@@ -969,6 +1051,58 @@ async function main(){
     if (e.key === "Escape") close();
   });
 })();
+
+
+/* ===== Yesterday modal ===== */
+(function initYesterdayModal(){
+  const openBtn = document.getElementById("yesterdayOpen");
+  const modal = document.getElementById("yesterdayModal");
+  const closeBtn = document.getElementById("yesterdayClose");
+  const listEl = document.getElementById("yesterdayList");
+
+  if (!openBtn || !modal || !closeBtn || !listEl) return;
+
+  function open(){
+    modal.classList.add("show");
+  }
+  function close(){
+    modal.classList.remove("show");
+  }
+
+  openBtn.addEventListener("click", () => {
+    // IMPORTANT: dex is loaded in main(), so we rely on a global
+    if (!window.__DEX__ || !window.__DEX__.length){
+      listEl.innerHTML = "<li>Dex not loaded yet.</li>";
+      open();
+      return;
+    }
+
+    listEl.innerHTML = "<li>Loading...</li>";
+    open();
+
+    const yesterday = pickPokemonsForDaySync(window.__DEX__, PUZZLES_PER_DAY, -1);
+
+    listEl.innerHTML = "";
+    yesterday.forEach(mon => {
+      const li = document.createElement("li");
+      li.textContent = mon.name;
+      listEl.appendChild(li);
+    });
+  });
+
+  closeBtn.addEventListener("click", close);
+
+  // click outside closes
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) close();
+  });
+
+  // Esc closes
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") close();
+  });
+})();
+
 
 /* ===== Buy Me a Coffee modal ===== */
 (function initBmcModal(){
