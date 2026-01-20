@@ -204,10 +204,17 @@ input,
   /* Mobile: give each puzzle more space */
   @media (max-width: 899px){
     .grid{
-      gap: 72px;
+      gap: 90px;
     }
     .puzzle{
       margin-bottom: 10px;
+    }
+  }
+  /* Mobile: extra vertical padding so stuff isn't cut off */
+  @media (max-width: 899px){
+    .card{
+      padding-top: clamp(32px, 8vw, 56px);
+      padding-bottom: clamp(90px, 10vw, 64px);
     }
   }
 
