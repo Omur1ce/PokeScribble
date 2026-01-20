@@ -213,8 +213,15 @@ input,
   /* Mobile: extra vertical padding so stuff isn't cut off */
   @media (max-width: 899px){
     .card{
-      padding-top: clamp(32px, 8vw, 56px);
+      padding-top: clamp(70px, 8vw, 56px);
       padding-bottom: clamp(90px, 10vw, 64px);
+    }
+  }
+  /* Mobile: horizontal padding control */
+  @media (max-width: 899px){
+    .card{
+      padding-left: clamp(25px, 4vw, 28px);
+      padding-right: clamp(14px, 4vw, 28px);
     }
   }
 
