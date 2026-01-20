@@ -578,6 +578,20 @@ input,
   </div>
 </div>
 
+<!-- Congrats Modal -->
+<div class="modal-backdrop" id="congratsModal" role="dialog" aria-modal="true" aria-labelledby="congratsTitle">
+  <div class="modal">
+    <h2 id="congratsTitle">Congratulations! 🎉</h2>
+    <p>You solved all 3 scribbles!</p>
+    <p>Next puzzles in: <strong><span id="congratsCountdown">--:--:--</span></strong></p>
+
+    <div class="modal-actions">
+      <button class="btn primary" id="congratsClose" type="button">Nice!</button>
+    </div>
+  </div>
+</div>
+
+
 <!-- Disclaimer Modal -->
 <div class="modal-backdrop" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
   <div class="modal">
@@ -703,6 +717,39 @@ function initBackgroundToggle(){
     applyBackground(toggle.checked ? "dark" : "light");
   });
 }
+
+/* ===== Congrats modal ===== */
+(function initCongratsModal(){
+  const modal = document.getElementById("congratsModal");
+  const closeBtn = document.getElementById("congratsClose");
+  const outCountdown = document.getElementById("congratsCountdown");
+  const mainCountdown = document.getElementById("countdown");
+
+  if (!modal || !closeBtn || !outCountdown || !mainCountdown) return;
+
+  function open(){
+    // copy current countdown text into modal
+    outCountdown.textContent = mainCountdown.textContent || "--:--:--";
+    modal.classList.add("show");
+  }
+  function close(){
+    modal.classList.remove("show");
+  }
+
+  // expose a tiny global so puzzle logic can trigger it
+  window.__openCongratsModal = open;
+
+  closeBtn.addEventListener("click", close);
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) close();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") close();
+  });
+})();
+
 
 /* ====== Deterministic random daily picks ====== */
 function getDayKeyUTC(){
@@ -960,7 +1007,7 @@ function renderPuzzleCard(mon, index, dex){
     const correct = normalize(mon.name) === value;
 
     if (correct){
-      msg.textContent = '✅ Correct!';
+      msg.textContent = '✅ Correct!!';
       msg.className = 'msg ok';
 
     updateSolvedState(true);
@@ -980,9 +1027,17 @@ function renderPuzzleCard(mon, index, dex){
       // small delay so confetti finishes first
       //setTimeout(openBmcModal, 600);
     }
+    // // If all 3 are solved, show congrats popup once
+    // if (solvedCount === PUZZLES_PER_DAY && !window.__congratsShown){
+    //   window.__congratsShown = true;
+    //   if (typeof window.__openCongratsModal === "function"){
+    //     window.__openCongratsModal();
+    //   }
+    // }
+
 
     } else {
-      msg.textContent = '❌ Try again';
+      msg.textContent = '❌ Try again...';
       msg.className = 'msg err';
       updateSolvedState(false);
     }
@@ -1020,6 +1075,15 @@ async function main(){
   const todayStr = new Date().toLocaleDateString(undefined, { year:'numeric', month:'short', day:'2-digit' });
   todayTag.textContent = `Today: ${todayStr}`;
 
+
+  function lastDexNumber(dex){
+    if (!dex.length) return 0;
+
+    const last = dex[dex.length - 1];
+
+    return parseInt(last.num, 10) || 0;
+  }
+
   // Load dex
   let dex = [];
   try{
@@ -1029,7 +1093,7 @@ async function main(){
 
     const scribbleEl = document.getElementById("scribbleCount");
     if (scribbleEl){
-      const count = maxDexNumber(dex);
+      const count = lastDexNumber(dex);
       scribbleEl.textContent = `${count}/1025 Pokémon Scribbled!`;
     }
 
