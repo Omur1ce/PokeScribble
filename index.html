@@ -200,6 +200,18 @@ input,
     .grid{ grid-template-columns: repeat(3, 1fr); }
   }
 
+
+  /* Mobile: give each puzzle more space */
+  @media (max-width: 899px){
+    .grid{
+      gap: 36px;
+    }
+    .puzzle{
+      margin-bottom: 10px;
+    }
+  }
+
+
 .imgbox{
   position: relative;
   aspect-ratio: 1 / 1;     /* lock scribble area */
@@ -270,7 +282,13 @@ input,
   z-index: 1;
 }
 
+.puzzle{
+  overflow: visible !important;
+}
 
+.ac-list{
+  z-index: 9999;
+}
 
 
   .imgbox{
