@@ -219,7 +219,7 @@ input,
   /* Mobile: horizontal padding control */
   @media (max-width: 899px){
     .card{
-      padding-left: clamp(25px, 4vw, 28px);
+      padding-left: clamp(35px, 4vw, 28px);
       padding-right: clamp(14px, 4vw, 28px);
     }
   }
@@ -528,7 +528,18 @@ input,
         </label>
         <span>Dark</span>
       </div>
+      <div class="toggle" title="Toggle spelling help">
+        <span>AutoSpell Off</span>
+        <label class="switch" aria-label="Toggle spelling help">
+          <input id="helpToggle" type="checkbox" />
+          <span class="slider"></span>
+        </label>
+        <span>AutoSpell On</span>
+      </div>
+
     </div>
+
+
 
     <div class="hr" aria-hidden="true"></div>
 
@@ -653,8 +664,30 @@ input,
 const SPRITE_EXT = "jpeg";
 const PUZZLES_PER_DAY = 3;
 const BG_KEY = "pokescribble_bg";
+const HELP_KEY = "pokescribble_help";
+
 
 /* ====== Utilities ====== */
+function isHelpEnabled(){
+  const saved = localStorage.getItem(HELP_KEY);
+  return saved === null ? true : (saved === "on"); // default ON
+}
+
+function initHelpToggle(){
+  const toggle = document.getElementById("helpToggle");
+  if (!toggle) return;
+
+  toggle.checked = isHelpEnabled();
+
+  toggle.addEventListener("change", () => {
+    localStorage.setItem(HELP_KEY, toggle.checked ? "on" : "off");
+    location.reload();
+  });
+}
+
+
+
+
 const msDay = 24*60*60*1000;
 const normalize = s => s.toLowerCase().normalize("NFKD")
   .replace(/[\u0300-\u036f]/g,"")
@@ -960,7 +993,7 @@ function playRightSound(){
 /* ====== Render one puzzle card ====== */
 const solvedSet = new Set(); // puzzle indexes that are currently correct
 
-function renderPuzzleCard(mon, index, dex){
+function renderPuzzleCard(mon, index, dex, helpEnabled){
   const el = document.createElement('div');
   el.className = 'puzzle';
 
@@ -1043,7 +1076,14 @@ function renderPuzzleCard(mon, index, dex){
   }
 
   // Autocomplete pick triggers check
-  attachAutocomplete(input, list, dex, () => check());
+  if (helpEnabled){
+    attachAutocomplete(input, list, dex, () => check());
+  } else {
+    // keep dropdown hidden + don't filter
+    list.classList.add("hide");
+    input.addEventListener("input", () => list.classList.add("hide"));
+  }
+
 
   // Only check on Enter (prevents blur/focus from firing anything)
   input.addEventListener('keydown', (e) => {
@@ -1059,6 +1099,8 @@ function renderPuzzleCard(mon, index, dex){
 /* ====== Boot ====== */
 async function main(){
   initBackgroundToggle();
+  initHelpToggle();
+
 
   const countdownEl = document.getElementById('countdown');
   const puzzlesEl = document.getElementById('puzzles');
@@ -1114,7 +1156,8 @@ async function main(){
   }
 
   puzzlesEl.innerHTML = '';
-  picks.forEach((mon, i) => puzzlesEl.appendChild(renderPuzzleCard(mon, i, dex)));
+  picks.forEach((mon, i) => puzzlesEl.appendChild(renderPuzzleCard(mon, i, dex, isHelpEnabled())));
+
 
 }
 
